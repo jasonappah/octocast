@@ -98,3 +98,45 @@ interface PrintHistory {
   }
 }
 
+export async function login() {
+  const response = await octoFetch("/api/login", {
+    method: "POST",
+    body: JSON.stringify({
+      passive: true,
+    }),
+  });
+  const json = await response.json();
+  return json as Login;
+}
+
+interface UserRecord {
+  name: string;
+  active: boolean;
+  user: boolean
+  admin: boolean;
+  apikey: string;
+  settings: object
+  groups: string[];
+  needs: Needs
+  permissions: Permission[];
+
+}
+
+interface Permission {
+  key: string;
+  name: string;
+  dangerous: boolean;
+  default_groups: string[];
+  description: string;
+  needs: Needs;
+}
+
+interface Needs {
+  role: string[];
+  group: string[];
+}
+
+interface Login extends UserRecord {
+  session: string;
+  _is_external_client: boolean;
+}

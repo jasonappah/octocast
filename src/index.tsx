@@ -8,16 +8,19 @@ import {
   OpenInBrowserAction,
   showToast,
   ToastStyle,
+  ListItem,
 } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { getCurrentJob, getJobs } from "./lib";
 import type { FileFolder, PrintJob } from "./lib";
 import { Duration, DateTime } from "luxon";
+import {login} from "./lib"
+import SockJS from "sockjs-client";
 
 // TODO: Add a "refresh" button to the list
 // TODO: Auto-refresh the list (maybe make the polling interval configurable as a preference, and use swr?)
 export default function JobList() {
-  const [{current, jobs}, setState] = useState<{ current?: PrintJob; jobs: FileFolder[] }>({ jobs: [] });
+  const [{ current, jobs }, setState] = useState<{ current?: PrintJob; jobs: FileFolder[] }>({ jobs: [] });
   const [isLoading, setIsLoading] = useState(true);
   const baseUrl = getPreferenceValues()["octoprint-base-url"];
 
@@ -30,8 +33,31 @@ export default function JobList() {
     setIsLoading(false);
   }
 
+
+  async function authSock(sock: WebSocket) {
+    const data = await login()
+    const payload = {auth:`${data.name}:${data.session}`}
+    sock.send(JSON.stringify(payload))
+
+  }
+
   useEffect(() => {
+    const sock = new SockJS(baseUrl+"/sockjs");
+    sock.onopen = function () {
+      console.log("open");
+      authSock(sock)
+    };
+
+    sock.onmessage = function (e) {
+      console.log("message", e.data);
+    };
+
+    sock.onclose = function () {
+      console.log("close");
+    };
+
     refresh();
+    return sock.close;
   }, []);
 
   const globalActions = (
