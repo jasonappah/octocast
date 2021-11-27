@@ -1,66 +1,128 @@
-import { ActionPanel, CopyToClipboardAction, List, OpenInBrowserAction, showToast, ToastStyle } from "@raycast/api";
+import {
+  ActionPanel,
+  CopyToClipboardAction,
+  getPreferenceValues,
+  List,
+  Icon,
+  Color,
+  OpenInBrowserAction,
+  showToast,
+  ToastStyle,
+} from "@raycast/api";
 import { useState, useEffect } from "react";
-import fetch from "node-fetch";
+import { getCurrentJob, getJobs } from "./lib";
+import type { FileFolder, PrintJob } from "./lib";
+import { Duration, DateTime } from "luxon";
 
-export default function ArticleList() {
-  const [state, setState] = useState<{ articles: Article[] }>({ articles: [] });
+// TODO: Add a "refresh" button to the list
+// TODO: Auto-refresh the list (maybe make the polling interval configurable as a preference, and use swr?)
+export default function JobList() {
+  const [{current, jobs}, setState] = useState<{ current?: PrintJob; jobs: FileFolder[] }>({ jobs: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const baseUrl = getPreferenceValues()["octoprint-base-url"];
+
+  async function refresh() {
+    const data = await fetchJobs();
+    setState((oldState) => ({
+      ...oldState,
+      ...data,
+    }));
+    setIsLoading(false);
+  }
 
   useEffect(() => {
-    async function fetch() {
-      const articles = await fetchArticles();
-      setState((oldState) => ({
-        ...oldState,
-        articles: articles,
-      }));
-    }
-    fetch();
+    refresh();
   }, []);
 
+  const globalActions = (
+    <ActionPanel>
+      <OpenInBrowserAction url={baseUrl} />
+    </ActionPanel>
+  );
   return (
-    <List isLoading={state.articles.length === 0} searchBarPlaceholder="Filter articles by name...">
-      {state.articles.map((article) => (
-        <ArticleListItem key={article.id} article={article} />
-      ))}
+    <List actions={globalActions} isLoading={isLoading} searchBarPlaceholder="Search for files">
+      {!isLoading && (
+        <>
+          <List.Section title="Current Job">
+            <CurrentItem print={current} />
+          </List.Section>
+          <List.Section title="Printer Status">
+            {/* TODO: Add list items for printer temperature, printer port / connection status */}
+          </List.Section>
+          <List.Section title="All Files">
+            {jobs.map((job) => (
+              <JobListItem key={`${job.hash}_${job.date}`} job={job} />
+            ))}
+          </List.Section>
+        </>
+      )}
     </List>
   );
 }
 
-function ArticleListItem(props: { article: Article }) {
-  const article = props.article;
+function CurrentItem({ print }: { print?: PrintJob }) {
+  const [elapsedTime, setElapsed] = useState(print?.progress.printTime || -2);
+  useEffect(() => {
+    if (print && elapsedTime != -2) {
+      const interval = setInterval(() => {
+        setElapsed((r) => r + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [print]);
 
+  // TODO: start, pause, cancel, restart
+  const actions = <ActionPanel>{/* <CopyToClipboardAction title="Copy URL" content={"job.url"} /> */}</ActionPanel>;
   return (
     <List.Item
-      id={article.id}
-      key={article.id}
-      title={article.title}
-      subtitle="Raycast Blog"
-      icon="list-icon.png"
-      accessoryTitle={new Date(article.date_modified).toLocaleDateString()}
+      id="current"
+      key="current"
+      title={print?.job.file.name || "No active print"}
+      subtitle={
+        print
+          ? `${Duration.fromMillis(elapsedTime * 1000).toISOTime({
+              suppressMilliseconds: true,
+            })} / ${Duration.fromMillis(print?.progress.printTimeLeft * 1000).toISOTime({
+              suppressMilliseconds: true,
+            })}`
+          : undefined
+      }
+      accessoryTitle={print?.progress.completion.toFixed(2) + "%" || ""}
+      icon={{ source: print ? Icon.Download : Icon.Circle, tintColor: print ? Color.Green : Color.PrimaryText }}
+      actions={print ? actions : undefined}
+    />
+  );
+}
+
+function JobListItem(props: { job: FileFolder }) {
+  const { job } = props;
+  return (
+    <List.Item
+      id={`${job.hash}_${job.date}`}
+      key={`${job.hash}_${job.date}`}
+      title={job.name}
+      subtitle={Duration.fromMillis(job.gcodeAnalysis.estimatedPrintTime * 1000).toISOTime({
+        suppressMilliseconds: true,
+      })}
+      icon={{ source: Icon.Document, tintColor: Color.Blue }}
+      accessoryTitle={`Uploaded ${DateTime.fromSeconds(job.date).toLocaleString(DateTime.DATETIME_MED)}`}
       actions={
         <ActionPanel>
-          <OpenInBrowserAction url={article.url} />
-          <CopyToClipboardAction title="Copy URL" content={article.url} />
+          <OpenInBrowserAction url={"job.url"} title="Open OctoPrint" />
+          <CopyToClipboardAction title="Copy URL" content={"job.url"} />
         </ActionPanel>
       }
     />
   );
 }
 
-async function fetchArticles(): Promise<Article[]> {
+async function fetchJobs(): Promise<{ jobs?: FileFolder[]; current?: PrintJob }> {
   try {
-    const response = await fetch("https://raycast.com/feed.json");
-    const json = await response.json();
-    return (json as Record<string, unknown>).items as Article[];
+    const [current, all] = await Promise.all([getCurrentJob(), getJobs()]);
+    return { jobs: all.files, current };
   } catch (error) {
     console.error(error);
-    showToast(ToastStyle.Failure, "Could not load articles");
-    return Promise.resolve([]);
+    showToast(ToastStyle.Failure, "Could not load OctoPrint status");
+    return Promise.resolve({});
   }
 }
-
-type Article = {
-  id: string;
-  title: string;
-  url: string;
-  date_modified: string;
-};

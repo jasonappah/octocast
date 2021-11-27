@@ -1,24 +1,26 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "octocast",
-  "title": "octocast",
-  "description": "Manage your OctoPrint server from Raycast",
+  "title": "OctoCast",
+  "description": "Keep an eye on your 3D prints with OctoCast.",
   "icon": "command-icon.png",
-  "author": "Jason Antwi-Appah <hey@jasonaa.me>",
+  "author": "jasonappah",
   "license": "MIT",
   "commands": [
     {
       "name": "index",
-      "title": "Show List",
-      "description": "Template to show a list received from a networking response",
+      "title": "Manage OctoPrint",
+      "description": "Manage current print status and start new jobs",
       "mode": "view"
     }
   ],
   "dependencies": {
     "@raycast/api": "^1.25.6",
+    "luxon": "^2.1.1",
     "node-fetch": "^3.0.0"
   },
   "devDependencies": {
+    "@types/luxon": "^2.0.7",
     "@types/node": "~16.10.0",
     "@types/react": "^17.0.28",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
@@ -31,5 +33,23 @@
   "scripts": {
     "build": "ray build -e dist",
     "dev": "ray develop"
-  }
+  },
+  "preferences": [
+    {
+      "name": "octoprint-base-url",
+      "title": "OctoPrint API URL",
+      "description": "The base URL of the OctoPrint server.",
+      "type": "textfield",
+      "default": "http://octopi.local:5000",
+      "required": true
+    },
+    {
+      "name": "octoprint-api-key",
+      "title": "OctoPrint API Key",
+      "description": "Can be retrieved by opening OctoPrint settings > Application Keys, entering 'OctoCast' for the application identifer, then pressing Generate.",
+      "type": "password",
+      "default": "",
+      "required": true
+    }
+  ]
 }
