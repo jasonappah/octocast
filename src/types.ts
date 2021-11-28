@@ -131,7 +131,7 @@ export interface Resends {
   ratio: number;
 }
 
-type Tool = `tool${number}`;
+export type Tool = `tool${number}`;
 
 export interface SocketPayloadBase {
   state: MachineState;
@@ -150,15 +150,20 @@ export type TimelapsePayload = null;
 export interface CurrentPayload extends SocketPayloadBase {
   plugins: object;
   busyFiles: unknown[];
+  temps: [CurrentTemp];
 }
 
-export interface HistoryPayload extends SocketPayloadBase {
-  temps: { time: number; bed: Temperature; chamber: Temperature; [key: Tool]: Temperature }[];
+
+export interface CurrentTemp { bed: Temperature; chamber: Temperature; [key: Tool]: Temperature }
+export interface HistoricalTemps extends CurrentTemp { time: number; }
+
+export type HistoryPayload = CurrentPayload & {
+  temps: HistoricalTemps[]
 }
 
 export interface PluginPayload {
-  plugin: any;
-  data: any;
+  plugin: object;
+  data: object;
 }
 
 export interface ConnectedPayload {
