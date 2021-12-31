@@ -2,7 +2,8 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "octocast",
   "title": "OctoCast",
-  "description": "Keep an eye on your 3D prints with OctoCast.",
+  "description": "Manage your OctoPrint server and keep an eye on your 3D prints with OctoCast.",
+  "subtitle": "OctoPrint",
   "icon": "command-icon.png",
   "author": "jasonappah",
   "license": "MIT",
@@ -11,6 +12,12 @@
       "name": "index",
       "title": "Manage OctoPrint",
       "description": "Manage current print status and start new jobs",
+      "mode": "view"
+    },
+    {
+      "name": "logs",
+      "title": "View Gcode Logs",
+      "description": "View recent gcode logs",
       "mode": "view"
     }
   ],
@@ -35,7 +42,7 @@
   "scripts": {
     "build": "ray build -e dist",
     "dev": "ray develop",
-    "lint": "eslint src --fix"
+    "lint": "ray lint"
   },
   "preferences": [
     {
