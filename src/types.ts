@@ -1,3 +1,60 @@
+export type InstanceInfo = Pick<
+  ConnectedPayload,
+  "version" | "branch" | "display_version" | "plugin_hash" | "config_hash"
+> & { apikey: string };
+
+export type Payloads = {
+  job: PrintJobPayload;
+  current: CurrentPayload;
+  history: HistoryPayload;
+  plugin: PluginPayload;
+  timelapse: TimelapsePayload;
+  connected: ConnectedPayload;
+};
+
+export enum Update {
+  CURRENT_PRINT_JOB,
+  CURRENT_PRINT_JOB_PROGRESS,
+  FILE_LIST,
+  SOCKET,
+  CURRENT_TEMPERATURE,
+  MACHINE_STATE,
+  NEW_LOGS,
+  INSTANCE_INFO,
+  CONNECTION_SETTINGS,
+}
+
+export type Action =
+  | { type: Update.CURRENT_PRINT_JOB; value: Job }
+  | { type: Update.CURRENT_PRINT_JOB_PROGRESS; value: Progress }
+  | { type: Update.FILE_LIST; value: FileFolder[] }
+  | { type: Update.SOCKET; value: WebSocket }
+  | { type: Update.CURRENT_TEMPERATURE; value: CurrentTemp }
+  | { type: Update.MACHINE_STATE; value: MachineState }
+  | { type: Update.NEW_LOGS; value: string[] }
+  | { type: Update.INSTANCE_INFO; value: ConnectedPayload }
+  | { type: Update.CONNECTION_SETTINGS; value: ConnectionSettings };
+
+export type ConnectionSettings = {
+  current: {
+    state: string;
+    port: string;
+    baudrate: number;
+    printerProfile: string;
+  };
+  options: {
+    ports: string[];
+    baudrates: number[];
+    printerProfiles: { name: string; id: string }[];
+    portPreference: string;
+    baudratePreference: number;
+    printerProfilePreference: string;
+    autoconnect: boolean;
+  };
+};
+
+// following types are derived directly from the OctoPrint API documentation (https://docs.octoprint.org/en/master/api/push.html)
+
 interface Filament {
   length: number;
   volume: number;
@@ -153,13 +210,18 @@ export interface CurrentPayload extends SocketPayloadBase {
   temps: [CurrentTemp];
 }
 
-
-export interface CurrentTemp { bed: Temperature; chamber: Temperature; [key: Tool]: Temperature }
-export interface HistoricalTemps extends CurrentTemp { time: number; }
+export interface CurrentTemp {
+  bed: Temperature;
+  chamber: Temperature;
+  [key: Tool]: Temperature;
+}
+export interface HistoricalTemps extends CurrentTemp {
+  time: number;
+}
 
 export type HistoryPayload = CurrentPayload & {
-  temps: HistoricalTemps[]
-}
+  temps: HistoricalTemps[];
+};
 
 export interface PluginPayload {
   plugin: object;
