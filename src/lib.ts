@@ -3,7 +3,17 @@ import SockJS from "sockjs-client";
 import { getPreferenceValues, showHUD, showToast, ToastStyle } from "@raycast/api";
 import fetch from "node-fetch";
 import type { RequestInfo, RequestInit, Response } from "node-fetch";
-import { PrintJob, FileFolder, Login, CurrentTemp, Job, MachineState, Progress, ConnectionSettings, ConnectedPayload } from "./types";
+import {
+  PrintJob,
+  FileFolder,
+  Login,
+  CurrentTemp,
+  Job,
+  MachineState,
+  Progress,
+  ConnectionSettings,
+  ConnectedPayload,
+} from "./types";
 import { Action, Payloads, Update } from "./types";
 // for types, see https://docs.octoprint.org/en/master/api/datamodel.html
 // and https://docs.octoprint.org/en/master/api/push.html
@@ -11,7 +21,6 @@ import { Action, Payloads, Update } from "./types";
 // TODO: Handle users that only have some permissions for reading/writing data
 
 export async function octoFetch(request: RequestInfo, init?: RequestInit | undefined): Promise<Response | undefined> {
-  // TODO: Error handling with toasts n stuff
   const prefs = getPreferenceValues();
   if (!init) init = {};
 
@@ -21,13 +30,16 @@ export async function octoFetch(request: RequestInfo, init?: RequestInit | undef
     ...init.headers,
   };
   try {
+    let req: Response;
     if (typeof request === "string") {
-      return await fetch(prefs["octoprint-base-url"] + request, init);
+      req = await fetch(prefs["octoprint-base-url"] + request, init);
     } else {
-      return await fetch(request, init);
+      req = await fetch(request, init);
     }
+    if (!req.ok) throw new Error(`HTTP error! status: ${req.status}`);
+    return req;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     showToast(ToastStyle.Failure, "Error", `Error: ${error}`);
   }
 }
@@ -35,9 +47,9 @@ export async function octoFetch(request: RequestInfo, init?: RequestInit | undef
 export async function getCurrentJob() {
   const response = await octoFetch("/api/job");
   if (!response) {
-    showHUD("An error occured when fetching the current job")
+    showHUD("An error occured when fetching the current job");
     return;
-};
+  }
   const json = await response.json();
   return json as PrintJob;
 }
@@ -59,14 +71,13 @@ export async function login() {
 }
 
 export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
-  async function authSock(sock: WebSocket) {
-    const data = await login();
-    const payload = { auth: `${data.name}:${data.session}` };
-    sock.send(JSON.stringify(payload));
-  }
   const sock = new SockJS(baseUrl + "/sockjs");
-  sock.onopen = function () {
-    authSock(sock);
+  sock.onopen = async function () {
+
+      const data = await login();
+      const payload = { auth: `${data.name}:${data.session}` };
+      sock.send(JSON.stringify(payload));
+
   };
 
   sock.onmessage = function (e: { data: Payloads }) {
@@ -74,6 +85,7 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
 
     switch (key) {
       case "timelapse":
+      case "history":
       case "plugin": {
         break;
       }
@@ -92,10 +104,6 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
         dispatch({ type: Update.CURRENT_PRINT_JOB_PROGRESS, value: payload.progress });
         break;
       }
-      case "history": {
-        const payload = e.data[key];
-        break;
-      }
       case "connected": {
         const payload = e.data[key];
         dispatch({ type: Update.INSTANCE_INFO, value: payload });
@@ -106,6 +114,11 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
         break;
     }
   };
+
+  sock.onerror = function (e) {
+    console.error("SockJS error", e);
+    showHUD("SockJS error");
+  }
 
   sock.onclose = function () {
     console.log("close");
@@ -148,6 +161,6 @@ export interface ReducerState {
   currentTemp?: CurrentTemp;
   machineState?: MachineState;
   lastLogs?: string[];
-  connection?: ConnectionSettings
-  instanceInfo?: ConnectedPayload
+  connection?: ConnectionSettings;
+  instanceInfo?: ConnectedPayload;
 }
