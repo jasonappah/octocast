@@ -115,13 +115,9 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
     }
   };
 
-  sock.onerror = function (e) {
-    console.error("SockJS error", e);
-    showHUD("SockJS error");
-  }
-
-  sock.onclose = function () {
-    console.log("close");
+  sock.onclose = function (e) {
+    console.log(e);
+    showHUD("Socket closed. " + e.reason);
   };
   return sock;
 }
@@ -129,7 +125,6 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
 export const titleCase = (txt: string) => {
   return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
 };
-
 export function reducer(state: ReducerState, action: Action): ReducerState {
   switch (action.type) {
     case Update.CURRENT_PRINT_JOB:
