@@ -1,15 +1,11 @@
 import {
   ActionPanel,
-  CopyToClipboardAction,
   getPreferenceValues,
   List,
   Icon,
   OpenInBrowserAction,
   showToast,
-  PushAction,
   ToastStyle,
-  ListItem,
-  Detail,
   Color,
   confirmAlert,
 } from "@raycast/api";
@@ -22,6 +18,7 @@ import { Temp } from "./components/Temp";
 
 // TODO: Add a "refresh jobs" button to the list
 // TODO: Add temperature graphs to a separate command
+// TODO: Support PSU Control
 
 export default function MainPage() {
   const [state, dispatch] = useReducer(reducer, { files: [] });
@@ -61,11 +58,15 @@ export default function MainPage() {
       {!isLoading && (
         <>
           <List.Section title="Printer Status">
+            {state?.job?.file.display && (
+              <CurrentItem state={state.machineState} job={state.job} progress={state.progress} />
+            )}
+
             <List.Item
               icon={{
                 source: Icon.Bubble,
                 tintColor:
-                  state.connection?.current.state === "Operational"
+                  state.connection?.current.state === "Operational" || state.connection?.current.state === "Printing"
                     ? Color.Green
                     : state.connection?.current.state === "Closed"
                     ? Color.Red
@@ -83,9 +84,7 @@ export default function MainPage() {
                   <ActionPanel.Item
                     icon={state.connection?.current?.state === "Operational" ? Icon.XmarkCircle : Icon.Checkmark}
                     title={
-                      state.connection?.current?.state === "Operational"
-                        ? "Disconnect from Printer"
-                        : "Connect to Printer"
+                      state.connection?.current.state !== "Closed" ? "Disconnect from Printer" : "Connect to Printer"
                     }
                     onAction={() => {
                       (async () => {
@@ -104,15 +103,16 @@ export default function MainPage() {
                   <OpenInBrowserAction title="Open OctoPrint in Browser" url={baseUrl} />
                 </ActionPanel>
               }
-            ></List.Item>
-            {state?.job?.file.display && (
-              <CurrentItem state={state.machineState} job={state.job} progress={state.progress} />
-            )}
+            />
             {state.connection?.current.state === "Operational" && <Temp temp={state.currentTemp} />}
           </List.Section>
           <List.Section title="All Files">
             {state.files.map((job) => (
-              <JobListItem key={`${job.hash}_${job.date}`} job={job} />
+              <JobListItem
+                printing={state.connection?.current.state === "Printing"}
+                key={`${job.hash}_${job.date}`}
+                job={job}
+              />
             ))}
           </List.Section>
         </>

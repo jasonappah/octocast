@@ -24,14 +24,14 @@ export default function LogsPage() {
 
   const refresh = async () => {
     const connection = (await (await octoFetch("/api/connection"))?.json()) as unknown as ConnectionSettings;
-      dispatch({ type: Update.CONNECTION_SETTINGS, value: connection });
-  }
+    dispatch({ type: Update.CONNECTION_SETTINGS, value: connection });
+  };
 
   useEffect(() => {
     (async () => {
       const sock = initSock(dispatch, baseUrl);
       dispatch({ type: Update.SOCKET, value: sock });
-      await refresh()
+      await refresh();
       return () => {
         sock.close();
       };
@@ -51,7 +51,11 @@ export default function LogsPage() {
   useEffect(() => {
     setLogs((prev) => {
       if (state.lastLogs) {
-        if (logs.length === 1 && prev[0] === "Waiting for logs..." || prev[0] === "Currently disconnected from printer.") return state.lastLogs;
+        if (
+          (logs.length === 1 && prev[0] === "Waiting for logs...") ||
+          prev[0] === "Currently disconnected from printer."
+        )
+          return state.lastLogs;
         if (!displayAllLogs) return [...prev, ...state.lastLogs].slice(-23);
         return [...prev, ...state.lastLogs];
       } else {

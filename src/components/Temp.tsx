@@ -10,6 +10,7 @@ enum Hot {
 }
 
 export function Temp({ temp }: { temp?: CurrentTemp }) {
+  // TODO: Instead of waiting, use API to pull initial temp data then refresh with sock data
   const [text, setText] = useState("Waiting for temperature update...");
   const [color, setColor] = useState(Color.Blue);
 

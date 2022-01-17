@@ -1,28 +1,32 @@
-import { List, Icon, Color, ActionPanel, confirmAlert } from "@raycast/api";
+import { List, Icon, Color, ActionPanel, confirmAlert, clearSearchBar } from "@raycast/api";
 import { FileFolder } from "../types";
 import { Duration, DateTime } from "luxon";
 import { octoFetch } from "../lib";
 
-export function JobListItem({ job }: { job: FileFolder }) {
+export function JobListItem({ job, printing }: { job: FileFolder; printing: boolean }) {
   const url = `/api/files/${job.origin}/${job.path}`;
 
   return (
     <List.Item
       actions={
         <ActionPanel>
-          <ActionPanel.Item
-            title="Print Job"
-            icon={Icon.Hammer}
-            onAction={async () => {
-              await octoFetch(url, {
-                method: "POST",
-                body: JSON.stringify({
-                  command: "select",
-                  print: true,
-                }),
-              });
-            }}
-          />
+          {!printing && (
+            <ActionPanel.Item
+              title="Print Job"
+              icon={Icon.Hammer}
+              onAction={async () => {
+                await octoFetch(url, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    command: "select",
+                    print: true,
+                  }),
+                });
+                await clearSearchBar();
+              }}
+            />
+          )}
+
           <ActionPanel.Item
             title="Delete Job"
             icon={Icon.XmarkCircle}
@@ -32,6 +36,7 @@ export function JobListItem({ job }: { job: FileFolder }) {
                   method: "DELETE",
                 });
               }
+              await clearSearchBar();
             }}
           />
         </ActionPanel>
