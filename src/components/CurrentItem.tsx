@@ -27,7 +27,6 @@ export function CurrentItem({ state, job, progress }: { state?: MachineState; jo
   return (
     <List.Item
       id="current"
-      key="current"
       title={title}
       actions={
         <ActionPanel>
@@ -92,7 +91,20 @@ export function CurrentItem({ state, job, progress }: { state?: MachineState; jo
             </>
           )}
           {!state?.flags.printing && state?.flags.ready && (
-            <ActionPanel.Item icon={Icon.Checkmark} title="Start Print" />
+            <>
+              <ActionPanel.Item
+                icon={Icon.Checkmark}
+                title="Start Print"
+                onAction={async () => {
+                  await octoFetch("/api/job", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      command: "start",
+                    }),
+                  });
+                }}
+              />
+            </>
           )}
         </ActionPanel>
       }
