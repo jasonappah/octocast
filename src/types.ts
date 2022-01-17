@@ -10,7 +10,7 @@ export type Payloads = {
   plugin: PluginPayload;
   timelapse: TimelapsePayload;
   connected: ConnectedPayload;
-};
+} & { [key: string]: { type: string; [x: string]: unknown } };
 
 export enum Update {
   CURRENT_PRINT_JOB,

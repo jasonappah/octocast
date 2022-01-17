@@ -18,8 +18,6 @@ import { Action, Payloads, Update } from "./types";
 // for types, see https://docs.octoprint.org/en/master/api/datamodel.html
 // and https://docs.octoprint.org/en/master/api/push.html
 
-// TODO: Handle users that only have some permissions for reading/writing data
-
 export async function octoFetch(request: RequestInfo, init?: RequestInit | undefined): Promise<Response | undefined> {
   const prefs = getPreferenceValues();
   if (!init) init = {};
@@ -40,7 +38,7 @@ export async function octoFetch(request: RequestInfo, init?: RequestInit | undef
     return req;
   } catch (error) {
     console.error(error);
-    showToast(ToastStyle.Failure, "Error", `Error: ${error}`);
+    showToast(ToastStyle.Failure, `${error}`);
   }
 }
 
@@ -73,11 +71,9 @@ export async function login() {
 export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
   const sock = new SockJS(baseUrl + "/sockjs");
   sock.onopen = async function () {
-
-      const data = await login();
-      const payload = { auth: `${data.name}:${data.session}` };
-      sock.send(JSON.stringify(payload));
-
+    const data = await login();
+    const payload = { auth: `${data.name}:${data.session}` };
+    sock.send(JSON.stringify(payload));
   };
 
   sock.onmessage = function (e: { data: Payloads }) {
@@ -109,9 +105,60 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
         dispatch({ type: Update.INSTANCE_INFO, value: payload });
         break;
       }
-      default:
-        console.log("Unknown message type", e.data[key]);
-        break;
+      default: {
+        const payload = e.data[key];
+        // TODO: use these payloads instead of polling OctoPrint
+        switch (payload.type) {
+          // { type: 'ZChange', payload: { new: 0, old: 10 } }
+          // { type: 'PrinterStateChanged',  payload: { state_id: 'OPERATIONAL', state_string: 'Operational' } }
+          /* same as printfailed {
+            type: 'PrintCancelled',
+            payload: {
+              name: 'CE3_connector.gcode',
+              path: 'CE3_connector.gcode',
+              origin: 'local',
+              size: 3069577,
+              position: { f: null, y: null, z: null, x: null, t: null, e: null },
+              owner: 'jasonaa',
+              user: 'jasonaa',
+              time: 649.910841142002
+            }
+          } 
+          {
+            type: 'PrintCancelling',
+            payload: {
+              name: 'CE3_connector.gcode',
+              path: 'CE3_connector.gcode',
+              origin: 'local',
+              size: 3069577,
+              owner: 'jasonaa',
+              user: 'jasonaa'
+            }
+          }
+          {
+            type: 'FileSelected',
+            payload: {
+              name: 'CE3_connector3.gcode',
+              path: 'CE3_connector3.gcode',
+              origin: 'local',
+              size: null,
+              owner: 'jasonaa',
+              user: 'jasonaa'
+            }
+          }
+          { type: 'Connected', payload: { port: null, baudrate: 115200 } }
+         */
+          case "ZChange":
+          case "PrinterStateChanged":
+          case "PrintFailed":
+          case "PrintCancelled":
+          case "PrintCancelling":
+          case "FileSelected":
+          case "Connected":
+          default:
+            console.log("Unknown message type", e.data[key]);
+        }
+      }
     }
   };
 
@@ -125,6 +172,7 @@ export function initSock(dispatch: React.Dispatch<Action>, baseUrl: string) {
 export const titleCase = (txt: string) => {
   return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
 };
+
 export function reducer(state: ReducerState, action: Action): ReducerState {
   switch (action.type) {
     case Update.CURRENT_PRINT_JOB:
