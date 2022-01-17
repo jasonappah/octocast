@@ -19,6 +19,24 @@
       "title": "View Gcode Logs",
       "description": "View recent gcode logs",
       "mode": "view"
+    },
+    {
+      "name": "jog",
+      "title": "Jog Printhead",
+      "description": "Move the printhead",
+      "mode": "view"
+    },
+    {
+      "name": "temp",
+      "title": "Set Temperature",
+      "description": "Control bed and tool temperatures",
+      "mode": "view"
+    },
+    {
+      "name": "extrude",
+      "title": "Control Extruder",
+      "description": "Extrude and retract filament",
+      "mode": "view"
     }
   ],
   "dependencies": {

@@ -7,13 +7,13 @@ OctoCast is a [Raycast](https://raycast.com) extension to monitor and manage you
 - Start/stop/pause jobs
 - Monitor temperature, time and progress of current job
 - Manage printer connections
+- Control printhead and extruder
 
 ### Future features
 
 - Upload new jobs
 - Monitor camera streams
 - View temperature graphs
-- Jog printhead + manually run extruder
 
 ## Caveats
 
