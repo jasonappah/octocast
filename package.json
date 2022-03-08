@@ -18,25 +18,29 @@
       "name": "logs",
       "title": "View Gcode Logs",
       "description": "View recent gcode logs",
-      "mode": "view"
+      "mode": "view",
+      "subtitle": "OctoPrint"
     },
     {
       "name": "jog",
       "title": "Jog Printhead",
       "description": "Move the printhead",
-      "mode": "view"
+      "mode": "view",
+      "subtitle": "OctoPrint"
     },
     {
       "name": "temp",
       "title": "Set Temperature",
       "description": "Control bed and tool temperatures",
-      "mode": "view"
+      "mode": "view",
+      "subtitle": "OctoPrint"
     },
     {
       "name": "extrude",
       "title": "Control Extruder",
       "description": "Extrude and retract filament",
-      "mode": "view"
+      "mode": "view",
+      "subtitle": "OctoPrint"
     }
   ],
   "dependencies": {
